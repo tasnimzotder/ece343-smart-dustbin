@@ -1,118 +1,82 @@
 import { useEffect, useState } from 'react';
-import {
-  VictoryArea,
-  VictoryChart,
-  VictoryGroup,
-  VictoryLine,
-  VictoryPortal,
-  VictoryScatter,
-  VictoryTooltip,
-} from 'victory';
 import { SensorDataType } from '../../interfaces/sensor-data.interface';
 import { getSensorData } from '../../services/sensors.service';
 import { getUniqueDeviceCount } from '../../utils/sensors.util';
+import MatrixCard from './MartixCard';
 
-const MatrixCard = () => {
-  return (
-    <div className="bg-blue-200 px-3 py-3 rounded-sm shadow-sm">
-      Matrix Card
-    </div>
-  );
+type TimerOptionType = {
+  name: string;
+  duration: number;
 };
 
-const Chart_X = ({ sensorData }: { sensorData: SensorDataType[] }) => {
-  const convertTimestampToDateTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const seconds = date.getSeconds();
+const timerOptions: TimerOptionType[] = [
+  {
+    name: '5s',
+    duration: 5,
+  },
+  {
+    name: '15s',
+    duration: 15,
+  },
+  {
+    name: '1m',
+    duration: 60,
+  },
+  {
+    name: '5m',
+    duration: 5 * 60,
+  },
+  {
+    name: '1h',
+    duration: 60 * 60,
+  },
+];
 
-    return `${hours}:${minutes}:${seconds}`;
-  };
-
-  return (
-    <div>
-      <VictoryChart width={1000} height={400} scale={'linear'}>
-        <VictoryGroup
-        // color="#c43a31"
-        // labels={({ datum }) => `${datum.y}`}
-        // labelComponent={<VictoryTooltip style={{ fontSize: 30 }} />}
-        >
-          <VictoryLine />
-          <VictoryArea
-            data={sensorData.map((data) => ({
-              x: convertTimestampToDateTime(data.timestamp),
-              y: data.capacity_remaining,
-            }))}
-            style={{
-              data: { fill: '#3b82f6', fillOpacity: 0.7, stroke: 'blue' },
-            }}
-          />
-          {/* <VictoryScatter
-            data={sensorData.map((data) => ({
-              x: convertTimestampToDateTime(data.timestamp),
-              y: data.capacity_remaining,
-            }))}
-            style={{
-              data: {
-                fill: '#3b82f6',
-                fillOpacity: 0.7,
-                stroke: 'blue',
-                strokeWidth: 40,
-                strokeMiterlimit: 100,
-                strokeLinecap: 'round',
-              },
-            }}
-          /> */}
-        </VictoryGroup>
-      </VictoryChart>
-    </div>
-  );
-};
-
-const Chart_Y = ({ sensorData }: { sensorData: SensorDataType[] }) => {
-  const convertTimestampToDateTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const seconds = date.getSeconds();
-
-    return `${hours}:${minutes}:${seconds}`;
-  };
-
-  const convertDustbinLidStatusToBoolean = (status: string) => {
-    if (status === 'open') {
-      return true;
-    } else {
-      return false;
-    }
-  };
-
-  return (
-    <div>
-      <VictoryChart width={1000} height={400} scale={'linear'}>
-        <VictoryGroup>
-          <VictoryLine />
-          <VictoryArea
-            data={sensorData.map((data) => ({
-              x: convertTimestampToDateTime(data.timestamp),
-              y: convertDustbinLidStatusToBoolean(data.dustbin_lid_status),
-            }))}
-            style={{
-              data: { fill: '#3b82f6', fillOpacity: 0.7, stroke: 'blue' },
-            }}
-          />
-        </VictoryGroup>
-      </VictoryChart>
-    </div>
-  );
-};
+const dataSampleOptions = [
+  {
+    name: '10',
+    count: 10,
+  },
+  {
+    name: '20',
+    count: 20,
+  },
+  {
+    name: '50',
+    count: 50,
+  },
+  {
+    name: '100',
+    count: 100,
+  },
+  {
+    name: '250',
+    count: 250,
+  },
+];
 
 const DustbinMatrix = () => {
   const [sensorData, setSensorData] = useState<SensorDataType[]>();
-  const [refreshTimer, setRefreshTimer] = useState<number>(120);
+  const [refreshTimer, setRefreshTimer] = useState<number>(
+    timerOptions[timerOptions.length - 1].duration
+  );
   const [indicatorBgColor, setIndicatorBgColor] =
     useState<string>('transparent'); // transparent
+  const [dustbinStatus, setDustbinStatus] = useState<boolean>(true);
+  const [dataSampleCount, setDataSampleCount] = useState<number>(
+    dataSampleOptions[1].count
+  );
+
+  const handleSetDataSampleCount = (count: number) => {
+    setDataSampleCount(count);
+
+    setRefreshTimer(refreshTimer + 0.00001);
+
+    console.log({ count });
+    // getSensorData(count).then((data) => {
+    //   setSensorData(data);
+    // });
+  };
 
   const handleIndicatorColor = () => {
     // keep the indicator color red for 0.25 seconds
@@ -122,12 +86,17 @@ const DustbinMatrix = () => {
     }, 250);
   };
 
+  const handleDustbinStatus = () => {
+    setDustbinStatus(!dustbinStatus);
+  };
+
   const handleSensorDataSet = () => {
-    getSensorData(1000).then((data) => {
-      setSensorData(data.slice(data.length - 25 - 2, data.length));
+    getSensorData(dataSampleCount).then((data) => {
+      // setSensorData(data.slice(data.length - 25 - 2, data.length));
+      setSensorData(data);
       handleIndicatorColor();
 
-      console.log('refreshed');
+      console.log({ dataSampleCount });
     });
   };
 
@@ -142,48 +111,105 @@ const DustbinMatrix = () => {
   }, [refreshTimer]);
 
   return (
-    <div className="bg-blue-100 px-2 py-2 rounded-sm my-4">
-      <h2 className="text-xl">Dustbin Matrix</h2>
+    <div className="px-2 py-2 rounded-sm my-4">
+      <h2 className="text-2xl">Dustbin Matrix</h2>
 
-      <div
-        style={{
-          height: '10px',
-          width: '10px',
-          backgroundColor: indicatorBgColor,
-          margin: '5px',
-          borderRadius: '50%',
-        }}
-      ></div>
+      {/* control panel */}
+      <div className="flex flex-col gap-3 p-3">
+        {/* data refresh */}
+        <div className="flex flex-row justify-end items-center gap-5">
+          <div>
+            {/* button */}
+            <button
+              style={{
+                backgroundColor: dustbinStatus ? '#3b82f6' : '#6b7280',
+                padding: '5px 10px',
+                color: '#fff',
+              }}
+              onClick={() => {
+                handleDustbinStatus();
+              }}
+            >
+              Dustbin: {dustbinStatus ? 'Active' : 'Inactive'}
+            </button>
+          </div>
 
-      <input
-        placeholder="Refresh Timer"
-        name="refresh_timer"
-        type={'number'}
-        defaultValue={refreshTimer}
-        onChange={(e) => {
-          const value = Number(e.target.value);
+          {/* data samples */}
+          <div>
+            <select
+              name="data_sample_count"
+              id="data_sample_count"
+              defaultValue={dataSampleCount}
+              onChange={(e) => {
+                const value = Number(e.target.value);
 
-          if (value < 5) {
-            setRefreshTimer(5);
-            e.target.value = '5';
-          } else {
-            setRefreshTimer(value);
-          }
-        }}
-      />
+                handleSetDataSampleCount(value);
+              }}
+              className="bg-blue-500 p-2 text-white"
+            >
+              {dataSampleOptions.map((option) => (
+                <option
+                  key={option.name}
+                  value={option.count}
+                  className="bg-blue-300 p-2 text-gray-700"
+                >
+                  {option.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      <div>
-        Total Dustbins: {sensorData && getUniqueDeviceCount(sensorData)}
+          {/* refresh duration */}
+          <div>
+            <select
+              name="refresh_timer"
+              id="refresh_timer"
+              defaultValue={refreshTimer}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+
+                setRefreshTimer(value);
+              }}
+              className="bg-blue-500 p-2 text-white"
+            >
+              {timerOptions.map((option) => (
+                <option
+                  key={option.name}
+                  value={option.duration}
+                  className="bg-blue-300 p-2 text-gray-700"
+                >
+                  {option.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div
+            style={{
+              height: '10px',
+              width: '10px',
+              backgroundColor: indicatorBgColor,
+              margin: '5px',
+              borderRadius: '50%',
+            }}
+          ></div>
+          {/* </div> */}
+        </div>
+
+        {/* stats */}
+        <div className="mx-auto text-center bg-blue-200 p-3">
+          <div className="text-3xl">
+            {sensorData && getUniqueDeviceCount(sensorData)}
+          </div>
+          <div>Dustbin Count</div>
+        </div>
       </div>
 
-      <div className="px-3 py-4 flex flex-row gap-3 flex-wrap justify-center">
-        <MatrixCard />
-        <MatrixCard />
-        <MatrixCard />
-      </div>
-
-      {sensorData && <Chart_X sensorData={sensorData} />}
-      {sensorData && <Chart_Y sensorData={sensorData} />}
+      {sensorData && (
+        <div className="px-3 py-4 flex flex-row gap-3 justify-center sm:flex-wrap lg:flex-nowrap">
+          <MatrixCard sensorData={sensorData} field="capacity_remaining" />
+          <MatrixCard sensorData={sensorData} field="dustbin_lid_status" />
+        </div>
+      )}
     </div>
   );
 };
