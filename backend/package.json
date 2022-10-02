@@ -1,0 +1,10 @@
+{
+  "name": "backend",
+  "version": "0.0.1",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-timestream-query": "^3.181.0",
+    "dotenv": "^16.0.3"
+  }
+}

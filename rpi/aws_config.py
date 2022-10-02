@@ -1,10 +1,19 @@
+"""
+Configuration for AWS IoT
+"""
+
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 import json
 
 client = AWSIoTMQTTClient("rpi")
 
 
-aws_endpoint = json.load(open("aws_endpoint.json")).get("aws_endpoint")
+aws_endpoint = json.load(open("config.json")).get("aws_endpoint")
+
+# config.json contains the AWS IoT endpoint
+# {
+#     "aws_endpoint": "xxxxxxxxxxxxxx-ats.iot.ap-southeast-1.amazonaws.com"
+# }
 
 client.configureEndpoint(aws_endpoint, 8883)
 client.configureCredentials(
@@ -12,6 +21,10 @@ client.configureCredentials(
     "./certs/private.pem.key",
     "./certs/certificate.pem.crt",
 )
+
+# AmazonRootCA1.pem is the Root CA certificate
+# private.pem.key is the private key
+# certificate.pem.crt is the device certificate file
 
 client.configureOfflinePublishQueueing(-1)  # Infinite offline Publish queueing
 client.configureDrainingFrequency(2)  # Draining: 2 Hz
