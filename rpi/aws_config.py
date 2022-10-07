@@ -30,3 +30,27 @@ client.configureOfflinePublishQueueing(-1)  # Infinite offline Publish queueing
 client.configureDrainingFrequency(2)  # Draining: 2 Hz
 client.configureConnectDisconnectTimeout(10)  # 10 sec
 client.configureMQTTOperationTimeout(5)  # 5 sec
+
+
+def on_connect(client, userdata, flags, rc):
+    print("Connected with result code " + str(rc))
+    client.subscribe(TOPIC_SUB, 1, topic_callback)
+
+
+def on_publish(client, userdata, mid):
+    print("message published: " + str(mid))
+
+
+def on_disconnect(client, userdata, rc):
+    print("disconnected from AWS IoT")
+
+
+client.on_connect = on_connect()
+client.on_publish = on_publish()
+client.on_disconnect = on_disconnect()
+
+
+def connectToAWSIoT():
+    print("connecting to AWS IoT...")
+    client.connect()
+    print("connected to AWS IoT")

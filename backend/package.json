@@ -1,10 +1,19 @@
 {
   "name": "backend",
-  "version": "0.0.1",
-  "main": "index.js",
+  "version": "1.0.0",
+  "main": "dist/index.js",
   "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^18.8.3",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.8.4"
+  },
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "rimraf dist && tsc"
+  },
   "dependencies": {
-    "@aws-sdk/client-timestream-query": "^3.181.0",
+    "@aws-sdk/client-timestream-query": "^3.186.0",
     "dotenv": "^16.0.3"
   }
 }

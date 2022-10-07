@@ -7,4 +7,24 @@ const getUniqueDeviceCount = (data: SensorDataType[]) => {
   return count;
 };
 
-export { getUniqueDeviceCount };
+const getUniqueDevices = (data: SensorDataType[]): string[] => {
+  let result: string[] = ['all'];
+
+  data.forEach((item) => {
+    if (!result.includes(item.device_id)) {
+      result.push(item.device_id);
+    }
+  });
+
+  return result;
+};
+
+const FilterDataByDeviceId = (data: SensorDataType[], deviceId: string) => {
+  if (deviceId === 'all') {
+    return data;
+  }
+
+  return data.filter((item) => item.device_id === deviceId);
+};
+
+export { getUniqueDeviceCount, getUniqueDevices, FilterDataByDeviceId };

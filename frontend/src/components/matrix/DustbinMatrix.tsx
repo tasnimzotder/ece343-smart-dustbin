@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import { SensorDataType } from '../../interfaces/sensor-data.interface';
 import { getSensorData } from '../../services/sensors.service';
-import { getUniqueDeviceCount } from '../../utils/sensors.util';
-import MatrixCard from './MartixCard';
+import {
+  FilterDataByDeviceId,
+  getUniqueDeviceCount,
+  getUniqueDevices,
+} from '../../utils/sensors.util';
+import MatrixCard from './MatrixCard';
 
 type TimerOptionType = {
   name: string;
@@ -62,10 +66,11 @@ const DustbinMatrix = () => {
   );
   const [indicatorBgColor, setIndicatorBgColor] =
     useState<string>('transparent'); // transparent
-  const [dustbinStatus, setDustbinStatus] = useState<boolean>(true);
   const [dataSampleCount, setDataSampleCount] = useState<number>(
     dataSampleOptions[1].count
   );
+  const [currentDevice, setCurrentDevice] = useState<string>('all');
+  const [uniqueDevices, setUniqueDevices] = useState<string[]>(['all']);
 
   const handleSetDataSampleCount = (count: number) => {
     setDataSampleCount(count);
@@ -73,9 +78,6 @@ const DustbinMatrix = () => {
     setRefreshTimer(refreshTimer + 0.00001);
 
     console.log({ count });
-    // getSensorData(count).then((data) => {
-    //   setSensorData(data);
-    // });
   };
 
   const handleIndicatorColor = () => {
@@ -86,19 +88,22 @@ const DustbinMatrix = () => {
     }, 250);
   };
 
-  const handleDustbinStatus = () => {
-    setDustbinStatus(!dustbinStatus);
-  };
-
   const handleSensorDataSet = () => {
-    getSensorData(dataSampleCount).then((data) => {
-      // setSensorData(data.slice(data.length - 25 - 2, data.length));
-      setSensorData(data);
+    getSensorData(dataSampleCount * 2).then((data) => {
+      setSensorData(FilterDataByDeviceId(data, currentDevice));
       handleIndicatorColor();
-
-      console.log({ dataSampleCount });
     });
   };
+
+  useEffect(() => {
+    setUniqueDevices(getUniqueDevices(sensorData || []));
+  }, [sensorData]);
+
+  // useEffect(() => {
+  //   handleSensorDataSet(
+  //     Fil
+  //   )
+  // }, [currentDevice]);
 
   useEffect(() => {
     handleSensorDataSet();
@@ -108,30 +113,39 @@ const DustbinMatrix = () => {
     }, refreshTimer * 1000);
 
     return () => clearInterval(interval);
-  }, [refreshTimer]);
+  }, [refreshTimer, currentDevice]);
 
   return (
     <div className="px-2 py-2 rounded-sm my-4">
-      <h2 className="text-2xl">Dustbin Matrix</h2>
+      {/* <h2 className="text-2xl">Dustbin Matrix</h2> */}
 
       {/* control panel */}
       <div className="flex flex-col gap-3 p-3">
         {/* data refresh */}
         <div className="flex flex-row justify-end items-center gap-5">
           <div>
-            {/* button */}
-            <button
-              style={{
-                backgroundColor: dustbinStatus ? '#3b82f6' : '#6b7280',
-                padding: '5px 10px',
-                color: '#fff',
+            {/* select devices */}
+            <select
+              name="unique_devices"
+              id="unique_devices"
+              defaultValue={uniqueDevices[0]}
+              onChange={(e) => {
+                const value = e.target.value;
+                console.log({ value });
+                setCurrentDevice(value);
               }}
-              onClick={() => {
-                handleDustbinStatus();
-              }}
+              className="bg-blue-500 p-2 text-white"
             >
-              Dustbin: {dustbinStatus ? 'Active' : 'Inactive'}
-            </button>
+              {uniqueDevices?.map((option) => (
+                <option
+                  key={option}
+                  value={option}
+                  className="bg-blue-300 p-2 text-gray-700"
+                >
+                  {option}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* data samples */}
@@ -147,7 +161,7 @@ const DustbinMatrix = () => {
               }}
               className="bg-blue-500 p-2 text-white"
             >
-              {dataSampleOptions.map((option) => (
+              {dataSampleOptions?.map((option) => (
                 <option
                   key={option.name}
                   value={option.count}
@@ -196,8 +210,8 @@ const DustbinMatrix = () => {
         </div>
 
         {/* stats */}
-        <div className="mx-auto text-center bg-blue-200 p-3">
-          <div className="text-3xl">
+        <div className="mx-auto text-center bg-blue-200 p-1">
+          <div className="text-xl">
             {sensorData && getUniqueDeviceCount(sensorData)}
           </div>
           <div>Dustbin Count</div>
@@ -205,13 +219,13 @@ const DustbinMatrix = () => {
       </div>
 
       {sensorData && (
-        <div className="px-3 py-4 flex flex-row gap-3 justify-center sm:flex-wrap lg:flex-nowrap">
+        <div className="px-3 py-4 flex flex-row gap-2 justify-center sm:flex-wrap ">
           <MatrixCard sensorData={sensorData} field="capacity_remaining" />
           <MatrixCard sensorData={sensorData} field="dustbin_lid_status" />
         </div>
       )}
     </div>
   );
-};
+};;
 
 export default DustbinMatrix;
