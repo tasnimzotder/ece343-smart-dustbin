@@ -45,9 +45,9 @@ def on_disconnect(client, userdata, rc):
     print("disconnected from AWS IoT")
 
 
-client.on_connect = on_connect()
-client.on_publish = on_publish()
-client.on_disconnect = on_disconnect()
+client.on_connect = on_connect
+client.on_publish = on_publish
+client.on_disconnect = on_disconnect
 
 
 def connectToAWSIoT():

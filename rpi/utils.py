@@ -3,25 +3,15 @@ import time
 
 GPIO.setmode(GPIO.BCM)
 
-# pins
 SERVO_PIN = 17
 IR_PIN = 27
+LED_PIN = 3
 
-LED_RED_PIN = 2
-LED_GREEN_PIN = 3
-
-TRIGGER_PIN = 10
-ECHO_PIN = 9
-
-# global variables
-DUSTBIN_HEIGHT = 100  # cm
-
-opened_time = time.time()
-status = "close"
+TRIGGER_PIN = 16
+ECHO_PIN = 18
 
 GPIO.setup(SERVO_PIN, GPIO.OUT)
-GPIO.setup(LED_RED_PIN, GPIO.OUT)
-GPIO.setup(LED_GREEN_PIN, GPIO.OUT)
+GPIO.setup(LED_PIN, GPIO.OUT)
 GPIO.setup(IR_PIN, GPIO.IN)
 
 GPIO.setup(TRIGGER_PIN, GPIO.OUT)
@@ -65,34 +55,39 @@ def getDustbinCapacityRemaining():
     time.sleep(0.00001)
     GPIO.output(TRIGGER_PIN, False)
 
+    start = time.time()
+    stop = time.time()
+
     while GPIO.input(ECHO_PIN) == 0:
-        pulse_start = time.time()
+        start = time.time()
 
     while GPIO.input(ECHO_PIN) == 1:
-        pulse_end = time.time()
+        stop = time.time()
 
-    pulse_duration = pulse_end - pulse_start
-    distance = pulse_duration * 17150
-    distance = round(distance, 2)
+    elapsed = stop - start
+    distance = (elapsed * 34300) / 2
 
-    return distance / DUSTBIN_HEIGHT * 100
+    return distance
 
 
-def main():
-    global opened_time
-    global status
+opened_time = time.time()
+status = "close"
 
-    ir = getIRValue()
 
-    if ir == 1:
-        print("opened")
-        status = "open"
-        ctrlMotor("open")
-        opened_time = time.time()
-    else:
-        curr_time = time.time()
+# def main():
+#     global opened_time
+#     global status
+#     ir = getIRValue()
 
-        if curr_time - opened_time > OPEN_TIME and status == "open":
-            print("closed")
-            status = "close"
-            ctrlMotor("close")
+#     if ir == 1:
+#         print("opened")
+#         status = "open"
+#         ctrlMotor("open")
+#         opened_time = time.time()
+#     else:
+#         curr_time = time.time()
+
+#         if curr_time - opened_time > 5 and status == "open":
+#             print("closed")
+#             status = "close"
+#             ctrlMotor("close")
