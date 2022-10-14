@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { SensorDataType } from '../../interfaces/sensor-data.interface';
+import { getAllDustbins } from '../../services/dustbin.service';
 import { getSensorData } from '../../services/sensors.service';
 import {
   FilterDataByDeviceId,
   getUniqueDeviceCount,
-  getUniqueDevices,
 } from '../../utils/sensors.util';
 import MatrixCard from './MatrixCard';
 
@@ -59,6 +59,29 @@ const dataSampleOptions = [
   },
 ];
 
+const checkNewDeviceAdded = (
+  existingList: string[],
+  newRecords: SensorDataType[]
+) => {
+  const newDeviceIds = newRecords.map((record) => record.device_id);
+
+  // get unique device ids
+  const uniqueDeviceIds = newDeviceIds.filter(
+    (deviceId, index) => newDeviceIds.indexOf(deviceId) === index
+  );
+
+  // check if unique device ids are present in the existing list
+  const newDeviceIdsAdded = uniqueDeviceIds.filter(
+    (deviceId) => !existingList.includes(deviceId)
+  );
+
+  if (newDeviceIdsAdded.length > 0) {
+    return true;
+  }
+
+  return false;
+};
+
 const DustbinMatrix = () => {
   const [sensorData, setSensorData] = useState<SensorDataType[]>();
   const [refreshTimer, setRefreshTimer] = useState<number>(
@@ -76,8 +99,6 @@ const DustbinMatrix = () => {
     setDataSampleCount(count);
 
     setRefreshTimer(refreshTimer + 0.00001);
-
-    console.log({ count });
   };
 
   const handleIndicatorColor = () => {
@@ -89,21 +110,32 @@ const DustbinMatrix = () => {
   };
 
   const handleSensorDataSet = () => {
-    getSensorData(dataSampleCount * 2).then((data) => {
-      setSensorData(FilterDataByDeviceId(data, currentDevice));
+    getSensorData(dataSampleCount * 2, currentDevice).then((data) => {
+      setSensorData(data);
+
+      // check if new device is added
+      const isAdded = checkNewDeviceAdded(uniqueDevices, data);
+
+      if (isAdded) {
+        handleUniqueDevices();
+      }
+
       handleIndicatorColor();
     });
   };
 
-  useEffect(() => {
-    setUniqueDevices(getUniqueDevices(sensorData || []));
-  }, [sensorData]);
+  const handleUniqueDevices = async () => {
+    let data = await getAllDustbins();
 
-  // useEffect(() => {
-  //   handleSensorDataSet(
-  //     Fil
-  //   )
-  // }, [currentDevice]);
+    // add all to the beginning of the array
+    data = ['all', ...data];
+
+    setUniqueDevices(data);
+  };
+
+  useEffect(() => {
+    handleUniqueDevices();
+  }, []);
 
   useEffect(() => {
     handleSensorDataSet();
@@ -131,7 +163,6 @@ const DustbinMatrix = () => {
               defaultValue={uniqueDevices[0]}
               onChange={(e) => {
                 const value = e.target.value;
-                console.log({ value });
                 setCurrentDevice(value);
               }}
               className="bg-blue-500 p-2 text-white"
@@ -212,7 +243,7 @@ const DustbinMatrix = () => {
         {/* stats */}
         <div className="mx-auto text-center bg-blue-200 p-1">
           <div className="text-xl">
-            {sensorData && getUniqueDeviceCount(sensorData)}
+            {uniqueDevices && uniqueDevices.length - 1}
           </div>
           <div>Dustbin Count</div>
         </div>
@@ -226,6 +257,6 @@ const DustbinMatrix = () => {
       )}
     </div>
   );
-};;
+};
 
 export default DustbinMatrix;

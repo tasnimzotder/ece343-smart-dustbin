@@ -7,17 +7,17 @@ const getUniqueDeviceCount = (data: SensorDataType[]) => {
   return count;
 };
 
-const getUniqueDevices = (data: SensorDataType[]): string[] => {
-  let result: string[] = ['all'];
+// const getUniqueDevices = (data: SensorDataType[]): string[] => {
+//   let result: string[] = ['all'];
 
-  data.forEach((item) => {
-    if (!result.includes(item.device_id)) {
-      result.push(item.device_id);
-    }
-  });
+//   data.forEach((item) => {
+//     if (!result.includes(item.device_id)) {
+//       result.push(item.device_id);
+//     }
+//   });
 
-  return result;
-};
+//   return result;
+// };
 
 const FilterDataByDeviceId = (data: SensorDataType[], deviceId: string) => {
   if (deviceId === 'all') {
@@ -27,4 +27,4 @@ const FilterDataByDeviceId = (data: SensorDataType[], deviceId: string) => {
   return data.filter((item) => item.device_id === deviceId);
 };
 
-export { getUniqueDeviceCount, getUniqueDevices, FilterDataByDeviceId };
+export { getUniqueDeviceCount, FilterDataByDeviceId };
