@@ -32,7 +32,7 @@ const MatrixCard = ({
     const offset = d.getTimezoneOffset();
     d.setMinutes(d.getMinutes() - offset);
 
-    return d.toLocaleTimeString();
+    return d.toLocaleString();
   };
 
   return (
