@@ -12,18 +12,10 @@ import utils
 
 # constant variables
 DEVICE_ID = "dustbin_1"
-OPEN_TIME = 5  # seconds
-
-# # global variables
-# capacity_remaining = 0
-# lid_status = "close"
-# prev_time = time.time()
-# prev_publish_time = time.time()
-# is_device_active = True
 
 
-TOPIC_PUB = "smart_dustbin/data"
-TOPIC_SUB = "smart_dustbin/ctrl"
+TOPIC_PUB = aws_config.TOPIC_PUB
+TOPIC_SUB = aws_config.TOPIC_SUB
 
 
 # aws iot
@@ -45,6 +37,11 @@ def handleDataPublish(cap_remaining: float, lid_status: str) -> bool:
     # publish data to AWS IoT
     response = aws_config.client.publish(TOPIC_PUB, json.dumps(data), 1)
 
+    if response == True:
+        print("data published to AWS IoT")
+    else:
+        print("failed to publish data to AWS IoT")
+
     return response
 
 
@@ -53,69 +50,59 @@ prev_time = time.time()
 prev_publish_time = time.time()
 status = "close"
 
+OPEN_TIME_DELTA = 5  # seconds
+
 
 def main():
     global prev_time
-    # global capacity_remaining
-    # global lid_status
-
-    # # check if device is active
-    # if not is_device_active:
-    #     return
-
-    capacity_remaining = utils.getDustbinCapacityRemaining()
-    # ir_value = utils.getIRValue()
-
-    # curr_time = time.time()
-
-    # if ir_value == 1:
-    #     lid_status = "open"
-    #     utils.ctrlMotor("open")
-    #     prev_time = time.time()
-    # else:
-    #     if curr_time - prev_time > OPEN_TIME and lid_status == "open":
-    #         lid_status = "close"
-    #         utils.ctrlMotor("close")
-
-    # # publish data to AWS IoT
-    # if curr_time - prev_publish_time > 5:
-    #     prev_publish_time = time.time()
-    #     handleDataPublish(capacity_remaining, lid_status)
+    global prev_publish_time
     global opened_time
     global status
+
     ir = utils.getIRValue()
+
+    print("ir: " + str(ir))
 
     curr_time = time.time()
 
-    if ir == 1:
-        print("opened")
-        status = "open"
-        utils.ctrlMotor("open")
-        opened_time = time.time()
+    capacity_remaining = utils.getDustbinCapacityRemaining()
+    print("capacity_remaining: " + str(capacity_remaining))
 
-    else:
-        if curr_time - opened_time > 5 and status == "open":
-            print("closed")
-            status = "close"
-            utils.ctrlMotor("close")
+    # if ir == 1:
+    #     print("opened")
+    #     status = "open"
+    #     utils.ctrlMotor("open")
+    #     opened_time = time.time()
 
-    if curr_time - prev_publish_time > 5:
-        prev_publish_time = time.time()
-        handleDataPublish(capacity_remaining, status)
+    #     # publish data to AWS IoT
+    #     capacity_remaining = utils.getDustbinCapacityRemaining()
+    #     handleDataPublish(capacity_remaining, status)
+
+    # else:
+    #     if curr_time - opened_time > OPEN_TIME_DELTA and status == "open":
+    #         print("closed")
+    #         status = "close"
+    #         utils.ctrlMotor("close")
+
+    #         # publish data to AWS IoT
+    #         capacity_remaining = utils.getDustbinCapacityRemaining()
+    #         handleDataPublish(capacity_remaining, status)
 
 
 if __name__ == "__main__":
 
     try:
-        utils.setupGPIO()
+        # utils.setupGPIO()
         aws_config.connectToAWSIoT()
         aws_config.client.subscribe(TOPIC_SUB, 1, topic_callback)
 
         while True:
             main()
-            time.sleep(0.1)
+            # print("looping")
+            time.sleep(0.1 * 10)
 
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
         aws_config.client.disconnect()
+        utils.servo.stop()
         utils.GPIO.cleanup()

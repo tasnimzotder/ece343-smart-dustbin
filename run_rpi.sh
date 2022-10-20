@@ -1,3 +1,4 @@
+#!/bin/bash
 # Description: This script will install all the dependencies and run the app
 
 # change directory to the ./rpi
@@ -27,11 +28,8 @@ if ! [ -x "$(command -v virtualenv)" ]; then
     sudo pip3 install virtualenv
 fi
 
-# create virtual environment
-virtualenv venv
-
-# activate virtual environment
-source venv/bin/activate
+# create virtual environment and activate it
+virtualenv venv && . ./venv/bin/activate
 
 # install requirements
 pip3 install -r requirements.txt

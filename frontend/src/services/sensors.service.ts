@@ -1,6 +1,12 @@
 import { SensorDataType } from '../interfaces/sensor-data.interface';
 
 const getSensorData = async (row_count: number, currentDevice: string) => {
+  if (row_count < 1) {
+    row_count = 1;
+  } else if (row_count > 1000) {
+    row_count = 1000;
+  }
+
   const response = await fetch(
     `${
       import.meta.env.VITE_LAMBDA_BACKEND_API

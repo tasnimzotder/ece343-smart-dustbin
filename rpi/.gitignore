@@ -1,2 +1,4 @@
-certs/*
+certs
 config.json
+venv
+*.pyc

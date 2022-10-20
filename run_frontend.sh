@@ -1,3 +1,4 @@
+#!/bin/bash
 # Description: This script will install all the dependencies and run the frontend app
 
 # change directory to the ./frontend

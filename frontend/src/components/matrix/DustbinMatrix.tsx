@@ -98,6 +98,10 @@ const DustbinMatrix = () => {
   const handleSetDataSampleCount = (count: number) => {
     setDataSampleCount(count);
 
+    if (refreshTimer < 5) {
+      setRefreshTimer(5);
+    }
+
     setRefreshTimer(refreshTimer + 0.00001);
   };
 
