@@ -2,14 +2,12 @@
 Configuration for AWS IoT
 """
 
-from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 import json
+
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 
 client = AWSIoTMQTTClient("rpi")
 
-
-TOPIC_PUB = "smart_dustbin/data"
-TOPIC_SUB = "smart_dustbin/ctrl"
 
 aws_endpoint = json.load(open("config.json")).get("aws_endpoint")
 
@@ -35,11 +33,25 @@ client.configureConnectDisconnectTimeout(10)  # 10 sec
 client.configureMQTTOperationTimeout(5)  # 5 sec
 
 
+def on_connect(client, userdata, flags, rc):
+    print("Connected with result code " + str(rc))
+    # client.subscribe(TOPIC_SUB, 1, topic_callback)
+
+
+def on_publish(client, userdata, mid):
+    print("message published: " + str(mid))
+
+
+def on_disconnect(client, userdata, rc):
+    print("disconnected from AWS IoT")
+
+
+client.on_connect = on_connect
+client.on_publish = on_publish
+client.on_disconnect = on_disconnect
+
+
 def connectToAWSIoT():
     print("connecting to AWS IoT...")
-    connect = client.connect()
-
-    if connect == True:
-        print("connected to AWS IoT")
-    else:
-        print("failed to connect to AWS IoT")
+    client.connect()
+    print("connected to AWS IoT")

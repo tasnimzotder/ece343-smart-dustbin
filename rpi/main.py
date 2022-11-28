@@ -7,15 +7,23 @@ import json
 # import RPi.GPIO as GPIO
 import time
 import aws_config
-import utils
+import peripherals as peripherals
 
 
 # constant variables
-DEVICE_ID = "dustbin_1"
+DEVICE_ID = "dustbin_13"
+OPEN_TIME = 5  # seconds
+
+# global variables
+capacity_remaining = 0
+lid_status = "close"
+prev_time = time.time()
+prev_publish_time = time.time()
+is_device_active = True
 
 
-TOPIC_PUB = aws_config.TOPIC_PUB
-TOPIC_SUB = aws_config.TOPIC_SUB
+TOPIC_PUB = "smart_dustbin/data"
+TOPIC_SUB = "smart_dustbin/ctrl"
 
 
 # aws iot
@@ -37,11 +45,6 @@ def handleDataPublish(cap_remaining: float, lid_status: str) -> bool:
     # publish data to AWS IoT
     response = aws_config.client.publish(TOPIC_PUB, json.dumps(data), 1)
 
-    if response == True:
-        print("data published to AWS IoT")
-    else:
-        print("failed to publish data to AWS IoT")
-
     return response
 
 
@@ -50,59 +53,62 @@ prev_time = time.time()
 prev_publish_time = time.time()
 status = "close"
 
-OPEN_TIME_DELTA = 5  # seconds
-
 
 def main():
     global prev_time
-    global prev_publish_time
     global opened_time
     global status
+    global prev_publish_time
 
-    ir = utils.getIRValue()
+    ir = peripherals.getIRValue()
+    capacity_remaining = peripherals.getDustbinCapacityRemaining()
 
-    print("ir: " + str(ir))
+    # print("IR: ", ir)
+    # print("Capacity Remaining: ", capacity_remaining)
 
     curr_time = time.time()
 
-    capacity_remaining = utils.getDustbinCapacityRemaining()
-    print("capacity_remaining: " + str(capacity_remaining))
+    if capacity_remaining < 50:  # for testing purposes
+        peripherals.set_led("red")
+    else:
+        peripherals.set_led("green")
 
-    # if ir == 1:
-    #     print("opened")
-    #     status = "open"
-    #     utils.ctrlMotor("open")
-    #     opened_time = time.time()
+    if ir == 1:
+        opened_time = time.time()
 
-    #     # publish data to AWS IoT
-    #     capacity_remaining = utils.getDustbinCapacityRemaining()
-    #     handleDataPublish(capacity_remaining, status)
+        if status == "close":
+            status = "open"
+            print("opened")
+            peripherals.ctrlMotor("open")
+            
+        # print("opened")
+        # status = "open"
+        # peripherals.ctrlMotor("open")
+        # opened_time = time.time()
 
-    # else:
-    #     if curr_time - opened_time > OPEN_TIME_DELTA and status == "open":
-    #         print("closed")
-    #         status = "close"
-    #         utils.ctrlMotor("close")
+    else:
+        if curr_time - opened_time > 5 and status == "open":
+            print("closed")
+            status = "close"
+            peripherals.ctrlMotor("close")
 
-    #         # publish data to AWS IoT
-    #         capacity_remaining = utils.getDustbinCapacityRemaining()
-    #         handleDataPublish(capacity_remaining, status)
+    if curr_time - prev_publish_time > 5:
+        prev_publish_time = time.time()
+        response = handleDataPublish(capacity_remaining, status)
+        print("publish response: ", response)
 
 
 if __name__ == "__main__":
-
     try:
-        # utils.setupGPIO()
         aws_config.connectToAWSIoT()
         aws_config.client.subscribe(TOPIC_SUB, 1, topic_callback)
 
         while True:
             main()
-            # print("looping")
-            time.sleep(0.1 * 10)
+            time.sleep(0.1)
+            # time.sleep(1)
 
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
         aws_config.client.disconnect()
-        utils.servo.stop()
-        utils.GPIO.cleanup()
+        peripherals.GPIO.cleanup()
